@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
 import { api } from '@/lib/api'
 import { Badge } from '@workspace/ui/components/badge'
@@ -30,7 +32,7 @@ export default async function HomePage() {
           <section key={competition}>
             <div className="mb-4 flex items-center gap-3">
               <h2 className="font-heading text-xl font-semibold">{competition}</h2>
-              <Badge variant="secondary">{compSeasons[0].kind}</Badge>
+              <Badge variant="secondary">{compSeasons[0]?.kind}</Badge>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {compSeasons.map((s) => (

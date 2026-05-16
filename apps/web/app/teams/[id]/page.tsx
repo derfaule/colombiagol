@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { api, MatchSummary } from '@/lib/api'
@@ -34,7 +36,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
       <div className="mb-8">
         <h1 className="font-heading text-3xl font-bold">{team.name}</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          {team.seasons_active} season{team.seasons_active !== 1 ? 's' : ''} in database
+          {team.seasons.length} season{team.seasons.length !== 1 ? 's' : ''} in database
         </p>
       </div>
 
