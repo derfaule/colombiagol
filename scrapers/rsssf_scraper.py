@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 RSSSF Colombian Football Scraper (1948–2010)
 =============================================
