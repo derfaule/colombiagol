@@ -19,7 +19,7 @@ import sqlite3
 import time
 from pathlib import Path
 
-DATA_DIR = Path(__file__).parent / "data"
+DATA_DIR = Path(__file__).parent.parent / "data"
 DEFAULT_DB = Path(__file__).parent.parent / "apps" / "api" / "colombia_liga.db"
 
 # The RSSSF/historical data all belongs to this competition
