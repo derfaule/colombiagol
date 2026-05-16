@@ -1,0 +1,7 @@
+# Scraped output — run the pipeline locally, don't commit these
+data/*.json
+data/*.csv
+data/.cache/
+__pycache__/
+*.pyc
+.env
