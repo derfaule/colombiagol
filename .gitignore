@@ -34,3 +34,8 @@ npm-debug.log*
 # Misc
 .DS_Store
 *.pem
+
+# SQLite WAL/journal files (db itself is tracked)
+*.db-shm
+*.db-wal
+*.db-journal
