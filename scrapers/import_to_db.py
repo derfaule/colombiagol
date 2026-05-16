@@ -2,14 +2,15 @@
 Import scraped data into colombia_liga.db (existing normalized schema).
 
 Run order:
-    1. python rsssf_scraper.py            # produces data/seasons_1948_2009.json
-    2. python import_to_db.py --rsssf     # loads pre-2010 standings into DB
-    3. python import_to_db.py --crosscheck # compares DB standings vs API-Football
+    1. python rsssf_scraper.py --matches   # produces data/seasons_1948_2009.json
+    2. python import_to_db.py --rsssf      # loads pre-2010 standings into DB
+    3. python import_to_db.py --matches    # loads pre-2010 match results into DB
+    4. python import_to_db.py --crosscheck # compares DB standings vs API-Football
 
 Usage:
-    python import_to_db.py --rsssf   [--db PATH]   # import RSSSF 1948-2009
+    python import_to_db.py --rsssf   [--db PATH]
+    python import_to_db.py --matches [--db PATH]
     python import_to_db.py --crosscheck [--years 2015 2023] [--db PATH]
-    python import_to_db.py --rsssf --crosscheck     # both
 """
 
 from __future__ import annotations
@@ -326,18 +327,116 @@ def crosscheck(conn: sqlite3.Connection, start_year: int, end_year: int):
     print(f"  {out_csv}")
 
 
+# ── Match import ──────────────────────────────────────────────────────────────
+
+def fuzzy_find_team(conn: sqlite3.Connection, name: str) -> int | None:
+    """Find team by exact name, then case-insensitive, then partial match."""
+    name = name.strip()
+    row = conn.execute("SELECT id FROM teams WHERE name = ?", (name,)).fetchone()
+    if row:
+        return row["id"]
+    row = conn.execute("SELECT id FROM teams WHERE lower(name) = lower(?)", (name,)).fetchone()
+    if row:
+        return row["id"]
+    # Try matching on first significant word (handles "América" vs "CD América" etc.)
+    first_word = name.split()[0] if name.split() else name
+    if len(first_word) >= 4:
+        row = conn.execute(
+            "SELECT id FROM teams WHERE lower(name) LIKE lower(?)", (f"%{first_word}%",)
+        ).fetchone()
+        if row:
+            return row["id"]
+    return None
+
+
+def import_matches(conn: sqlite3.Connection):
+    src = DATA_DIR / "seasons_1948_2009.json"
+    if not src.exists():
+        print(f"[ERROR] {src} not found. Run: python3 rsssf_scraper.py --matches")
+        return
+
+    with open(src) as f:
+        seasons = json.load(f)
+
+    competition_id = upsert_competition(conn)
+    inserted = skipped = unmatched_teams = 0
+    unmatched_log: list[str] = []
+
+    for season_data in seasons:
+        year = season_data["year"]
+        matches_by_tournament = season_data.get("matches", {})
+        if not matches_by_tournament:
+            continue
+
+        for tournament_name, match_list in matches_by_tournament.items():
+            if not match_list:
+                continue
+
+            phase = PHASE_MAP.get(tournament_name, None)
+            season_id = upsert_season(conn, competition_id, year, phase)
+
+            for m in match_list:
+                home_id = fuzzy_find_team(conn, m["home_team"])
+                away_id = fuzzy_find_team(conn, m["away_team"])
+
+                if not home_id or not away_id:
+                    missing = []
+                    if not home_id:
+                        missing.append(m["home_team"])
+                        upsert_team(conn, m["home_team"])
+                        home_id = fuzzy_find_team(conn, m["home_team"])
+                    if not away_id:
+                        missing.append(m["away_team"])
+                        upsert_team(conn, m["away_team"])
+                        away_id = fuzzy_find_team(conn, m["away_team"])
+                    for t in missing:
+                        unmatched_log.append(f"{year} {tournament_name}: {t}")
+                    unmatched_teams += len(missing)
+
+                try:
+                    conn.execute(
+                        """
+                        INSERT INTO matches
+                            (season_id, home_team_id, away_team_id,
+                             match_date, home_score, away_score, stage)
+                        VALUES (?,?,?,?,?,?,?)
+                        """,
+                        (
+                            season_id, home_id, away_id,
+                            m.get("match_date"),
+                            m.get("home_score"),
+                            m.get("away_score"),
+                            m.get("stage"),
+                        ),
+                    )
+                    inserted += 1
+                except Exception:
+                    skipped += 1
+
+        conn.commit()
+
+    print(f"\nMatches — Inserted: {inserted}  Skipped: {skipped}  New teams created: {unmatched_teams}")
+    if unmatched_log[:20]:
+        print("  Teams not found in DB (created new):")
+        for entry in unmatched_log[:20]:
+            print(f"    {entry}")
+        if len(unmatched_log) > 20:
+            print(f"    ... and {len(unmatched_log) - 20} more")
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--rsssf",       action="store_true", help="Import RSSSF 1948-2009 data")
+    parser.add_argument("--rsssf",       action="store_true", help="Import RSSSF 1948-2009 standings")
+    parser.add_argument("--matches",     action="store_true", help="Import RSSSF 1948-2009 match results")
     parser.add_argument("--crosscheck",  action="store_true", help="Cross-check DB vs API-Football")
     parser.add_argument("--years",       nargs=2, type=int, default=[2010, 2024], metavar="YEAR",
                         help="Year range for cross-check (default: 2010 2024)")
     parser.add_argument("--db",          default=str(DEFAULT_DB), help="Path to colombia_liga.db")
     args = parser.parse_args()
 
-    if not args.rsssf and not args.crosscheck:
+    if not args.rsssf and not args.matches and not args.crosscheck:
         parser.print_help()
         return
 
@@ -351,8 +450,12 @@ def main():
     conn = get_conn(db_path)
 
     if args.rsssf:
-        print("\n── Importing RSSSF 1948-2009 ──")
+        print("\n── Importing RSSSF 1948-2009 standings ──")
         import_rsssf(conn)
+
+    if args.matches:
+        print("\n── Importing RSSSF 1948-2009 match results ──")
+        import_matches(conn)
 
     if args.crosscheck:
         print("\n── Cross-checking vs API-Football ──")
