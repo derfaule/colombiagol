@@ -33,13 +33,25 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         </Link>
       </div>
 
-      <div className="mb-8">
-        <h1 className="font-heading text-3xl font-bold">{player.name}</h1>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {player.position && <Badge variant="secondary">{player.position}</Badge>}
-          {player.nationality && <Badge variant="outline">{player.nationality}</Badge>}
-          {player.birth_date && (
-            <span className="text-muted-foreground text-sm">{player.birth_date}</span>
+      <div className="mb-8 flex items-start gap-6">
+        {player.photo_url && (
+          <img
+            src={player.photo_url}
+            alt={player.name}
+            className="h-24 w-24 shrink-0 rounded-full object-cover"
+          />
+        )}
+        <div className="min-w-0">
+          <h1 className="font-heading text-3xl font-bold">{player.name}</h1>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {player.position && <Badge variant="secondary">{player.position}</Badge>}
+            {player.nationality && <Badge variant="outline">{player.nationality}</Badge>}
+            {player.birth_date && (
+              <span className="text-muted-foreground text-sm">{player.birth_date}</span>
+            )}
+          </div>
+          {player.bio && (
+            <p className="text-muted-foreground mt-3 text-sm leading-relaxed">{player.bio}</p>
           )}
         </div>
       </div>

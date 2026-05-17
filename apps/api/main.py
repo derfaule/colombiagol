@@ -1,11 +1,18 @@
 from __future__ import annotations
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 import queries
+
+STATIC_DIR = Path(__file__).parent / "static"
+STATIC_DIR.mkdir(exist_ok=True)
+(STATIC_DIR / "logos").mkdir(exist_ok=True)
+(STATIC_DIR / "players").mkdir(exist_ok=True)
 
 
 @asynccontextmanager
@@ -23,6 +30,8 @@ app.add_middleware(
     allow_methods=['GET'],
     allow_headers=['*'],
 )
+
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 def conn():

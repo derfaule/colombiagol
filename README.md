@@ -122,6 +122,24 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 pnpm dev   # starts both apps via Turborepo
 ```
 
+### Component development (Storybook)
+
+The `apps/storybook/` app uses Storybook 8 + Vite + Tailwind v4 to develop and document the shared UI components in `packages/ui` in isolation — without needing the API or the Next.js app running.
+
+All 7 components have stories: Badge, Button, Card, Separator, Skeleton, Table, and Tabs. Each story uses football-specific examples (standings tables, match cards, scorer lists, etc.) so the components are always shown in context that reflects real usage.
+
+**Run Storybook:**
+
+```bash
+npm run dev -w @workspace/storybook
+```
+
+Opens at `http://localhost:6006`.
+
+**Adding a story for a new component:**
+
+Create `apps/storybook/src/stories/MyComponent.stories.tsx` and follow the same pattern as the existing stories — export a default `Meta` object, then named exports for each variant. Use a football-relevant example as the default story so it reads naturally alongside the others.
+
 ---
 
 ## Data pipeline
@@ -237,6 +255,7 @@ colombiagol/
 │   │   ├── colombia_liga.db     # SQLite database (committed to repo)
 │   │   ├── requirements.txt
 │   │   └── railway.toml         # Render deploy config
+│   ├── storybook/               # Storybook 8 + Vite (component dev)
 │   └── web/
 │       ├── app/                 # Next.js app router
 │       ├── components/
