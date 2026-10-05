@@ -135,6 +135,10 @@ export interface TeamDetail {
   id: number
   name: string
   slug: string
+  logo_url: string | null
+  bio: string | null
+  city: string | null
+  founded_year: number | null
   seasons: { season_id: number; season_label: string; year: number; competition_name: string; final_position: number | null; matches_played: number }[]
   matches: MatchSummary[]
 }
@@ -147,6 +151,8 @@ export interface Player {
   birth_date: string | null
   height_cm: number | null
   weight_kg: number | null
+  photo_url: string | null
+  bio: string | null
   total_goals: number
   total_appearances: number
   goals: Goal[]

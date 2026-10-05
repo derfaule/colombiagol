@@ -33,11 +33,25 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
         </Link>
       </div>
 
-      <div className="mb-8">
-        <h1 className="font-heading text-3xl font-bold">{team.name}</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          {team.seasons.length} season{team.seasons.length !== 1 ? 's' : ''} in database
-        </p>
+      <div className="mb-8 flex items-start gap-6">
+        {team.logo_url && (
+          <img
+            src={team.logo_url}
+            alt={`${team.name} badge`}
+            className="h-20 w-20 shrink-0 object-contain"
+          />
+        )}
+        <div className="min-w-0">
+          <h1 className="font-heading text-3xl font-bold">{team.name}</h1>
+          <div className="text-muted-foreground mt-1 flex flex-wrap gap-3 text-sm">
+            {team.city && <span>{team.city}</span>}
+            {team.founded_year && <span>Founded {team.founded_year}</span>}
+            <span>{team.seasons.length} season{team.seasons.length !== 1 ? 's' : ''} in database</span>
+          </div>
+          {team.bio && (
+            <p className="mt-3 text-sm leading-relaxed">{team.bio}</p>
+          )}
+        </div>
       </div>
 
       {/* Season summary cards */}

@@ -194,7 +194,8 @@ def list_teams(conn: sqlite3.Connection) -> list[dict]:
 
 def get_team(conn: sqlite3.Connection, team_id: int) -> dict | None:
     row = conn.execute(
-        'SELECT id, name, slug FROM teams WHERE id = ?', (team_id,)
+        'SELECT id, name, slug, logo_url, bio, city, founded_year FROM teams WHERE id = ?',
+        (team_id,),
     ).fetchone()
     return dict(row) if row else None
 
@@ -242,7 +243,7 @@ def get_team_matches(conn: sqlite3.Connection, team_id: int, season_id: int | No
 
 def get_player(conn: sqlite3.Connection, player_id: int) -> dict | None:
     row = conn.execute(
-        'SELECT id, name, position, nationality, birth_date, height_cm, weight_kg FROM players WHERE id = ?',
+        'SELECT id, name, position, nationality, birth_date, height_cm, weight_kg, photo_url, bio FROM players WHERE id = ?',
         (player_id,),
     ).fetchone()
     return dict(row) if row else None
